@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:15-alpine3.23
+    container_name: postgres
+    restart: always
+
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "12345"
+      POSTGRES_DB: "llmgateway"
+
+    ports:
+      - "5555:5432"
+
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
+    driver: local
