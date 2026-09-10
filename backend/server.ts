@@ -9,8 +9,8 @@ app.use(express.json());
 app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(clerkMiddleware());
 
-app.use('/auth', authRouter);
-
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/')
 // Global Error Handler
 app.use(errorHandler);
 
