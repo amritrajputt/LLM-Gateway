@@ -23,7 +23,10 @@ export class AuthService {
             .values({ name, email })
             .returning();
         return newUser;
+
     }
+    
+    
 }
 
 
