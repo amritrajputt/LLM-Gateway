@@ -18,3 +18,23 @@ export function encryptApiKey(plaintextKey: string) {
     authTag: authTag.toString('base64'),
   };
 }
+
+export function decryptApiKey({ ciphertext, iv, authTag }: {
+  ciphertext: string;
+  iv: string;
+  authTag: string;
+}) {
+  const decipher = crypto.createDecipheriv(
+    'aes-256-gcm',
+    MASTER_KEY,
+    Buffer.from(iv, 'base64')
+  );
+  decipher.setAuthTag(Buffer.from(authTag, 'base64'));
+
+  const plaintext = Buffer.concat([
+    decipher.update(Buffer.from(ciphertext, 'base64')),
+    decipher.final(), 
+  ]);
+
+  return plaintext.toString('utf8');
+}
