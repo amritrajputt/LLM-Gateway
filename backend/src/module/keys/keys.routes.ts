@@ -4,3 +4,5 @@ import { keysSchema } from './keys.dto';
 import { KeysController } from './keys.controller';
 const keysRouter = express.Router();
 keysRouter.post('/',validate(keysSchema),KeysController.createKey);
+
+export { keysRouter };
