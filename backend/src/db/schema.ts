@@ -47,10 +47,15 @@ export const keys = pgTable("keys", {
     userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     providerId: uuid("provider_id").notNull().references(() => providers.id, { onDelete: "restrict" }),
     encryptedApiKey: text("api_keys").notNull(),
+    project: varchar("project", { length: 100 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
-    userProviderIdx: uniqueIndex("keys_user_provider_idx").on(table.userId, table.providerId),
+    userProviderProjectIdx: uniqueIndex("keys_user_provider_project_idx").on(
+        table.userId,
+        table.providerId,
+        table.project,
+    ),
 }));
 
 export const models = pgTable("models", {
@@ -186,4 +191,4 @@ export const modelHistoryRelations = relations(modelHistory, ({ one }) => ({
 export const rateLimitsRelations = relations(rateLimits, ({ one }) => ({
     user: one(users, { fields: [rateLimits.userId], references: [users.id] }),
     apiKey: one(keys, { fields: [rateLimits.apiKeyId], references: [keys.id] }),
-}));
+}));
