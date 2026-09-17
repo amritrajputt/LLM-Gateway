@@ -5,4 +5,6 @@ import { KeysController } from './keys.controller';
 const keysRouter = express.Router();
 keysRouter.post('/addapikey',validate(keysSchema),KeysController.createKey);
 keysRouter.get('/getapikeys',KeysController.getKeys);
+keysRouter.patch('/updateapikey',KeysController.updateKey);
+keysRouter.delete('/deleteapikey',KeysController.deleteKey);
 export { keysRouter };
