@@ -3,11 +3,29 @@ import { ApiError } from '../../common/errors/ApiError';
 import { KeysService } from './keys.service';
 import { ApiResponse } from '../../common/responses/ApiResponse';
 import { encryptApiKey } from '../../common/encryption';
+import { idempotencyStore } from '../../common/idempotency/IdempotencyStore';
 
 export class KeysController {
     static async createKey(req: express.Request, res: express.Response, next: express.NextFunction) {
+        let claimedRequestKey: string | undefined;
+
         try {
             const { keys, userId, providerId, project } = req.body;
+            const idempotencyKey = req.header('Idempotency-Key');
+            if (!idempotencyKey) {
+                throw new ApiError(400, 'Idempotency-Key header is required');
+            }
+
+            const requestKey = `${userId}:${idempotencyKey}`;
+            const claim = await idempotencyStore.claim('keys:create', requestKey);
+            if (claim.status === 'completed') {
+                return res.status(claim.statusCode).json(claim.body);
+            }
+            if (claim.status === 'processing') {
+                throw new ApiError(409, 'A request with this idempotency key is already in progress');
+            }
+            claimedRequestKey = requestKey;
+
             const encryptedKey = encryptApiKey(keys);
             const createdKey = await KeysService.createKey({
                 userId,
@@ -16,8 +34,13 @@ export class KeysController {
                 project,
             });
 
-            return res.status(201).json(ApiResponse.created(createdKey, "Key created successfully"));
+            const response = ApiResponse.created(createdKey, "Key created successfully");
+            await idempotencyStore.complete('keys:create', requestKey, response.statusCode, response);
+            return res.status(response.statusCode).json(response);
         } catch (error) {
+            if (claimedRequestKey) {
+                await idempotencyStore.release('keys:create', claimedRequestKey);
+            }
             next(error);
         }
     }
