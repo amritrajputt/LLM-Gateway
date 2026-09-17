@@ -1,6 +1,6 @@
 import { db } from "../../index"
 import { keys as keysTable } from "../../db/schema"
-
+import { eq } from "drizzle-orm"
 type CreateKeyInput = {
     userId: string;
     providerId: string;
@@ -22,5 +22,12 @@ export class KeysService {
             });
 
         return newKey;
+    }
+    static async getAllKeys(userId: string) {
+
+        const keys = await db.select()
+        .from(keysTable)
+        .where(eq(keysTable.userId, userId))
+        return keys;
     }
 }

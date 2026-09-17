@@ -21,4 +21,13 @@ export class KeysController {
             next(error);
         }
     }
+    static async getKeys(req: express.Request, res: express.Response, next: express.NextFunction) {
+        try {
+            const  userId: string  = req.body;
+            const keys = await KeysService.getAllKeys(userId);
+            return res.status(200).json(ApiResponse.ok(keys, "Keys retrieved successfully"));
+        } catch (error) {
+            next(error);
+        }
+    }
 }
