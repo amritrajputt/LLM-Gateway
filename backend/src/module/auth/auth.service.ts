@@ -1,32 +1,25 @@
 import { db } from "../../index"
-import { users } from "../../db/schema"
-import { ApiError } from "../../common/errors/ApiError";
-import { eq } from "drizzle-orm";
-type RegisterDto = {
+import { organisations } from "../../db/schema"
+type OrganisationInput = {
+    id: string;
     name: string;
-    email: string;
+    slug?: string;
 };
 
 
 export class AuthService {
-    static async registerService({ name, email }: RegisterDto) {
-        const [existingUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, email));
-        
-        if (existingUser) {
-            throw ApiError.conflict("Email is already in use");
-        }
-        const [newUser] = await db
-            .insert(users)
-            .values({ name, email })
+    static async syncOrganisation({ id, name, slug }: OrganisationInput) {
+        const [organisation] = await db
+            .insert(organisations)
+            .values({ id, name, slug })
+            .onConflictDoUpdate({
+                target: organisations.id,
+                set: { name, slug, updatedAt: new Date() },
+            })
             .returning();
-        return newUser;
+        return organisation;
 
     }
-    
-    
 }
 
 

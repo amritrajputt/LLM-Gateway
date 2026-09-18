@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AuthService } from "./auth.service";
 import { ApiResponse } from "../../common/responses/ApiResponse";
-import { ApiError } from "../../common/errors/ApiError";
 
 export class AuthController {
     static async register(req: Request, res: Response, next: NextFunction) {
@@ -10,35 +9,26 @@ export class AuthController {
             const eventType = payload?.type;
             const data = payload?.data || payload;
 
-            if (eventType && eventType !== "user.created") {
+            if (eventType && !["organization.created", "organization.updated"].includes(eventType)) {
                 return res.status(200).json({
                     success: true,
                     message: `Event '${eventType}' received and acknowledged`,
                 });
             }
 
-            const email: string | undefined =
-                data?.email_addresses?.[0]?.email_address || payload?.email;
-
-            const firstName: string =
-                payload?.first_name;
-
-            const lastName: string =
-                payload?.last_name;
-
-            const name: string = firstName + " " + lastName;
-
-            if (!email) {
-                console.warn("No email found in payload, returning 200 OK acknowledgment:", payload);
+            if (!data?.id) {
                 return res.status(200).json({
                     success: true,
-                    message: "Webhook payload acknowledged, no user email present",
+                    message: "Organisation webhook acknowledged, no organisation id present",
                 });
             }
 
-            const newUser = await AuthService.registerService({ name, email });
-            const response = ApiResponse.created(newUser, "User registered successfully");
-            console.log("User registered successfully:", newUser);
+            const organisation = await AuthService.syncOrganisation({
+                id: data.id,
+                name: data.name || data.slug || data.id,
+                slug: data.slug,
+            });
+            const response = ApiResponse.ok(organisation, "Organisation synchronized successfully");
             return res.status(response.statusCode).json(response);
         } catch (err) {
             next(err);
