@@ -22,15 +22,13 @@ export const usageStatusEnum = pgEnum("usage_status", [
     "rate_limited",
 ]);
 
-export const users = pgTable("users", {
-    id: uuid("id").primaryKey().defaultRandom(),
+export const organisations = pgTable("organisations", {
+    id: varchar("id", { length: 64 }).primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
-    email: varchar("email", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-    emailIdx: uniqueIndex("users_email_idx").on(table.email),
-}));
+});
 
 export const providers = pgTable("providers", {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -44,7 +42,7 @@ export const providers = pgTable("providers", {
 
 export const keys = pgTable("keys", {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    organisationId: varchar("organisation_id", { length: 64 }).notNull().references(() => organisations.id, { onDelete: "cascade" }),
     providerId: uuid("provider_id").notNull().references(() => providers.id, { onDelete: "restrict" }),
     encryptedApiKey: text("api_keys").notNull(),
     project: varchar("project", { length: 100 }).notNull(),
@@ -52,7 +50,7 @@ export const keys = pgTable("keys", {
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
     userProviderProjectIdx: uniqueIndex("keys_user_provider_project_idx").on(
-        table.userId,
+        table.organisationId,
         table.providerId,
         table.project,
     ),
@@ -113,7 +111,7 @@ export const pricing = pgTable("pricing", {
 export const usage = pgTable("usage", {
     id: uuid("id").primaryKey().defaultRandom(),
     requestId: varchar("request_id", { length: 255 }).notNull(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    organisationId: varchar("organisation_id", { length: 64 }).notNull().references(() => organisations.id, { onDelete: "cascade" }),
     apiKeyId: uuid("api_key_id").notNull().references(() => keys.id, { onDelete: "restrict" }),
     modelId: uuid("model_id").notNull().references(() => models.id, { onDelete: "restrict" }),
     pricingId: uuid("pricing_id").notNull().references(() => pricing.id, { onDelete: "restrict" }),
@@ -127,22 +125,22 @@ export const usage = pgTable("usage", {
     status: usageStatusEnum("status").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
-    userCreatedIdx: index("usage_user_created_idx").on(table.userId, table.createdAt),
+    organisationCreatedIdx: index("usage_organisation_created_idx").on(table.organisationId, table.createdAt),
     modelCreatedIdx: index("usage_model_created_idx").on(table.modelId, table.createdAt),
     requestIdIdx: uniqueIndex("usage_request_id_idx").on(table.requestId),
 }));
 
 export const rateLimits = pgTable("rate_limits", {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    organisationId: varchar("organisation_id", { length: 64 }).notNull().references(() => organisations.id, { onDelete: "cascade" }),
     apiKeyId: uuid("api_key_id").notNull().references(() => keys.id, { onDelete: "cascade" }),
     requestsPerMinute: integer("requests_per_minute").notNull(),
     tokensPerDay: integer("tokens_per_day").notNull(),
 }, (table) => ({
-    userKeyIdx: uniqueIndex("rate_limits_user_key_idx").on(table.userId, table.apiKeyId),
+    organisationKeyIdx: uniqueIndex("rate_limits_organisation_key_idx").on(table.organisationId, table.apiKeyId),
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const organisationsRelations = relations(organisations, ({ many }) => ({
     keys: many(keys),
     usage: many(usage),
     rateLimits: many(rateLimits),
@@ -154,7 +152,7 @@ export const providersRelations = relations(providers, ({ many }) => ({
 }));
 
 export const keysRelations = relations(keys, ({ one, many }) => ({
-    user: one(users, { fields: [keys.userId], references: [users.id] }),
+    organisation: one(organisations, { fields: [keys.organisationId], references: [organisations.id] }),
     provider: one(providers, { fields: [keys.providerId], references: [providers.id] }),
     usage: many(usage),
     rateLimits: many(rateLimits),
@@ -178,7 +176,7 @@ export const pricingRelations = relations(pricing, ({ one, many }) => ({
 }));
 
 export const usageRelations = relations(usage, ({ one }) => ({
-    user: one(users, { fields: [usage.userId], references: [users.id] }),
+    organisation: one(organisations, { fields: [usage.organisationId], references: [organisations.id] }),
     apiKey: one(keys, { fields: [usage.apiKeyId], references: [keys.id] }),
     model: one(models, { fields: [usage.modelId], references: [models.id] }),
     pricing: one(pricing, { fields: [usage.pricingId], references: [pricing.id] }),
@@ -189,6 +187,6 @@ export const modelHistoryRelations = relations(modelHistory, ({ one }) => ({
 }));
 
 export const rateLimitsRelations = relations(rateLimits, ({ one }) => ({
-    user: one(users, { fields: [rateLimits.userId], references: [users.id] }),
+    organisation: one(organisations, { fields: [rateLimits.organisationId], references: [organisations.id] }),
     apiKey: one(keys, { fields: [rateLimits.apiKeyId], references: [keys.id] }),
 }));
