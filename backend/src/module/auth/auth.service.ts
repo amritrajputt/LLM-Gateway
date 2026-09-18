@@ -18,7 +18,6 @@ export class AuthService {
             })
             .returning();
         return organisation;
-
     }
 }
 
