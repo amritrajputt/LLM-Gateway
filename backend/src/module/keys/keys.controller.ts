@@ -10,13 +10,17 @@ export class KeysController {
         let claimedRequestKey: string | undefined;
 
         try {
-            const { keys, userId, providerId, project } = req.body;
+            const { keys, providerId, project } = req.body;
+            const organisationId = req.organisationId;
+            if (!organisationId) {
+                throw ApiError.forbidden('An active organisation is required');
+            }
             const idempotencyKey = req.header('Idempotency-Key');
             if (!idempotencyKey) {
                 throw new ApiError(400, 'Idempotency-Key header is required');
             }
 
-            const requestKey = `${userId}:${idempotencyKey}`;
+            const requestKey = `${organisationId}:${idempotencyKey}`;
             const claim = await idempotencyStore.claim('keys:create', requestKey);
             if (claim.status === 'completed') {
                 return res.status(claim.statusCode).json(claim.body);
@@ -28,7 +32,7 @@ export class KeysController {
 
             const encryptedKey = encryptApiKey(keys);
             const createdKey = await KeysService.createKey({
-                userId,
+                organisationId,
                 providerId,
                 encryptedApiKey: JSON.stringify(encryptedKey),
                 project,
@@ -46,8 +50,11 @@ export class KeysController {
     }
     static async getKeys(req: express.Request, res: express.Response, next: express.NextFunction) {
         try {
-            const userId: string = req.body;
-            const keys = await KeysService.getAllKeys(userId);
+            const organisationId = req.organisationId;
+            if (!organisationId) {
+                throw ApiError.forbidden('An active organisation is required');
+            }
+            const keys = await KeysService.getAllKeys(organisationId);
             return res.status(200).json(ApiResponse.ok(keys, "Keys retrieved successfully"));
         } catch (error) {
             next(error);
@@ -58,6 +65,10 @@ export class KeysController {
 
         try {
             const { id, keys, providerId, project } = req.body;
+            const organisationId = req.organisationId;
+            if (!organisationId) {
+                throw ApiError.forbidden('An active organisation is required');
+            }
             if (!id) {
                 throw new ApiError(400, "Key id is required");
                 return;
@@ -84,6 +95,7 @@ export class KeysController {
             const encryptedKey = encryptApiKey(keys);
             const updatedKey = await KeysService.updateKey({
                 id,
+                organisationId,
                 providerId,
                 encryptedApiKey: JSON.stringify(encryptedKey),
                 project,
@@ -103,11 +115,15 @@ export class KeysController {
     static async deleteKey(req: express.Request, res: express.Response, next: express.NextFunction) {
         try {
             const { id } = req.body;
+            const organisationId = req.organisationId;
+            if (!organisationId) {
+                throw ApiError.forbidden('An active organisation is required');
+            }
             if (!id) {
                 throw new ApiError(400, "Key id is required");
                 return;
             }
-            const deletedKey = await KeysService.deleteKey(id);
+            const deletedKey = await KeysService.deleteKey(id, organisationId);
             return res.status(200).json(ApiResponse.ok(deletedKey, "Key deleted successfully"));
         } catch (error) {
             next(error);

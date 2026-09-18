@@ -1,8 +1,8 @@
 import { db } from "../../index"
 import { keys as keysTable } from "../../db/schema"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 type CreateKeyInput = {
-    userId: string;
+    organisationId: string;
     providerId: string;
     encryptedApiKey: string;
     project: string;
@@ -26,14 +26,14 @@ export class KeysService {
 
         return newKey;
     }
-    static async getAllKeys(userId: string) {
+    static async getAllKeys(organisationId: string) {
 
         const keys = await db.select()
             .from(keysTable)
-            .where(eq(keysTable.userId, userId))
+            .where(eq(keysTable.organisationId, organisationId))
         return keys;
     }
-    static async updateKey(input: { id: string; providerId: string; encryptedApiKey: string; project: string, updatedAt: Date }) {
+    static async updateKey(input: { id: string; organisationId: string; providerId: string; encryptedApiKey: string; project: string, updatedAt: Date }) {
         const [updatedKey] = await db
             .update(keysTable)
             .set({
@@ -42,15 +42,16 @@ export class KeysService {
                 project: input.project,
                 updatedAt: input.updatedAt,
             })
+            .where(and(eq(keysTable.id, input.id), eq(keysTable.organisationId, input.organisationId)))
             .returning({
                 project: keysTable.project,
                 updatedAt: keysTable.updatedAt,
             });
     }
-    static async deleteKey(id: string) {
+    static async deleteKey(id: string, organisationId: string) {
         const [deletedKey] = await db
             .delete(keysTable)
-            .where(eq(keysTable.id, id))
+            .where(and(eq(keysTable.id, id), eq(keysTable.organisationId, organisationId)))
             .returning({ id: keysTable.id })
     }
 }
