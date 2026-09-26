@@ -1,7 +1,7 @@
 import { Redis } from "ioredis";
 import { redisClient } from "../../redis/client";
 
-const downModels = async (models: string) => {
-    await redisClient.sadd("down_models", models);
+export const downModel = async (model: string) => {
+    await redisClient.sadd("down_models", model);
 } 
 
