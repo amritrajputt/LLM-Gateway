@@ -1,3 +1,4 @@
+import {downModel} from "./routerRedis";
 const state = Object.freeze({
     closed: 0,
     open: 1,
@@ -5,6 +6,7 @@ const state = Object.freeze({
 });
 
 export class CircuitBreaker {
+    private model: string;
     private failureThreshold: number;
     private halfOpenThreshold: number;
     private cooldownMS: number;
@@ -14,7 +16,8 @@ export class CircuitBreaker {
     private _lastFailureTime: number;
     private _halfOpenSuccesses: number;
     private _halfOpenAttempts: number;
-    constructor(opts: { failureThreshold: number, halfOpenThreshold: number, cooldownMS: number, logger?: Console }) {
+    constructor(opts: { model: string, failureThreshold: number, halfOpenThreshold: number, cooldownMS: number, logger?: Console }) {
+        this.model = opts.model;
         this.failureThreshold = opts.failureThreshold || 10;
         this.halfOpenThreshold = opts.halfOpenThreshold || 10;
         this.cooldownMS = opts.cooldownMS || 30000;
@@ -85,13 +88,16 @@ export class CircuitBreaker {
             this.logger.info(`CircuitBreaker is now closed`);
         }
     }
-    onFailure() {
+    async onFailure() {
         if (this._state === state.half_open && this.failures >= this.failureThreshold) {
             this.logger.info(`half open threshold reached, circuit breaker is now open`);
             this._openCircuit();
             return;
         }
         this.failures++;
+        if (this.failures >= this.failureThreshold) {
+            await downModel(this.model);
+        }
         this._lastFailureTime = Date.now();
         if (this.failures >= this.failureThreshold) {
             this._openCircuit();
