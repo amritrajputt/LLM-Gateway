@@ -3,6 +3,7 @@ import cors from 'cors';
 import { clerkMiddleware } from '@clerk/express';
 import { authRouter } from './src/module/auth/auth.route';
 import { keysRouter } from './src/module/keys/keys.routes';
+import { modelRouter } from './src/module/models/model.routes';
 import { errorHandler } from './src/common/middleware/error.middleware';
 import { guardRails } from './src/guardrails/guardRails';
 import { db } from './src/index';
@@ -15,6 +16,7 @@ app.use(clerkMiddleware());
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/query', guardRails);
 app.use('/api/v1/keys', keysRouter);
+app.use('/api/v1/models', modelRouter);
 // Global Error Handler
 app.use(errorHandler);
 
