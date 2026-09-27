@@ -1,0 +1,7 @@
+import { Router } from "express";
+import { validate } from "../../common/dto/dto";
+import { modelSchema } from "./model.dto";
+import { modelController } from "./model.controller";
+
+export const modelRouter = Router();
+modelRouter.post("/", validate(modelSchema), modelController.create);
