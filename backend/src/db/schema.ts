@@ -30,6 +30,18 @@ export const organisations = pgTable("organisations", {
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+const providerEnum = pgEnum ("provider", ["openai","gemini","anthropic"])
+export const projects = pgTable("projects", {
+    id: varchar("id", { length: 65 }).primaryKey(),
+    projectName: varchar("project_name", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    modelOption: text("model_option").array().notNull().default([]),
+    provider: providerEnum("provider").notNull(),
+    slug: varchar("slug", { length: 255 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const providers = pgTable("providers", {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 100 }).notNull().unique(),
@@ -60,11 +72,7 @@ export const models = pgTable("models", {
     id: uuid("id").primaryKey().defaultRandom(),
     providerId: uuid("provider_id").notNull().references(() => providers.id, { onDelete: "cascade" }),
     modelName: varchar("model_name", { length: 255 }).notNull(), // e.g. "gpt-4o-mini"
-    displayName: varchar("display_name", { length: 255 }).notNull(),
-    contextLength: integer("context_length").notNull(),
-    supportsStreaming: boolean("supports_streaming").notNull().default(false),
-    supportsVision: boolean("supports_vision").notNull().default(false),
-    supportsFunctionCalling: boolean("supports_function_calling").notNull().default(false),
+    projectId: varchar("project_id", { length: 255 }).notNull().references(()=> projects.id,{onDelete:"cascade"}),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
