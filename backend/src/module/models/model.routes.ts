@@ -4,4 +4,4 @@ import { modelSchema } from "./model.dto";
 import { modelController } from "./model.controller";
 
 export const modelRouter = Router();
-modelRouter.post("/", validate(modelSchema), modelController.create);
+modelRouter.post("/addmodel", validate(modelSchema), modelController.create);
