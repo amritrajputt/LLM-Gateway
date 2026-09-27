@@ -36,7 +36,7 @@ export const projects = pgTable("projects", {
     projectName: varchar("project_name", { length: 255 }).notNull(),
     description: text("description").notNull(),
     modelOption: text("model_option").array().notNull().default([]),
-    provider: providerEnum("provider").notNull(),
+    providerId: providerEnum("provider").notNull(),
     slug: varchar("slug", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
