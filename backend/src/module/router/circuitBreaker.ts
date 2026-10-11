@@ -1,4 +1,4 @@
-import {downModel} from "./routerRedis";
+import { downModel } from "./routerRedis";
 const state = Object.freeze({
     closed: 0,
     open: 1,
@@ -16,7 +16,7 @@ export class CircuitBreaker {
     private _lastFailureTime: number;
     private _halfOpenSuccesses: number;
     private _halfOpenAttempts: number;
-    
+
     constructor(opts: { model: string, failureThreshold: number, halfOpenThreshold: number, cooldownMS: number, logger?: Console }) {
         this.model = opts.model;
         this.failureThreshold = opts.failureThreshold || 10;
